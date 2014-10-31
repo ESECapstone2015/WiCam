@@ -1,0 +1,12 @@
+#ignore OS noise
+ 
+Thumbs.db
+.DS_Store
+~*
+
+#Add the gitignore specifically
+!.gitignore
+
+#Altium Excludes
+History
+__Previews
