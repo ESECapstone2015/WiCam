@@ -93,6 +93,16 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+
+% TODO: define signal structure
+% struct Signal {
+%   samples
+%   sample_rate
+%   symbol_rate
+%   bits_per_symbol
+% }
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Always start from scratch 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -207,7 +217,7 @@ bits_per_source_sample = 8;
 source_sample_span = [0 2^bits_per_source_sample-1];  
 
 % Number of source samples per second
-source_sample_rate = 2.5e6;  % 2.5 Msps   
+source_sample_rate = 5e6;  % 2.5 Msps   
 
 % Source bits per second
 source_data_rate = bits_per_source_sample * source_sample_rate;
