@@ -5,6 +5,84 @@ classdef f
     methods(Static)
     
         
+        
+% Function-specific arguments
+%
+% rect: n_periods, phase, duty_cycle
+% tri:  n_periods, phase, duty_cycle
+% sin:  n_periods, phase
+% rand: <none>
+
+
+        function [X] = SigGen(type, n_samples, span, varargin)
+            X = zeros(n_samples,1);
+            
+            min_value = span(1);
+            max_value = span(2);               
+            
+            has_periods = 0;
+            has_phase = 0;
+            has_duty = 0;            
+            
+            if strcmp(type, 'rect') 
+                has_periods = 1;
+                has_phase = 1;
+                has_duty = 1;
+            elseif strcmp(type, 'tri') 
+                has_periods = 1;
+                has_phase = 1;
+                has_duty = 1;
+            elseif strcmp(type, 'sin') 
+                has_periods = 1;
+                has_phase = 1;
+            end
+
+            if has_periods == 1        
+                n_periods = cell2mat(varargin(1));
+            else
+                n_periods = 1;
+            end
+            if has_phase == 1   
+                phase = cell2mat(varargin(2));
+            else
+                phase = 0;
+            end;
+            if has_duty == 1
+                duty_cycle = cell2mat(varargin(3));
+            else
+                duty_cycle = 0.5;
+            end
+
+            n_samples_per_period = floor(n_samples / n_periods);        
+            period = zeros(n_samples_per_period+1,1);
+
+            if strcmp(type, 'rect') 
+                mid = round(duty_cycle*n_samples_per_period);
+                period(1:mid) = max_value;
+                period(mid+1:n_samples_per_period) = min_value;
+            elseif strcmp(type, 'tri') 
+                mid = round(duty_cycle*n_samples_per_period);
+                period(1:mid) = linspace(min_value, max_value, mid);
+                period(mid:n_samples_per_period+1) = linspace(max_value, min_value, (2+n_samples_per_period)-mid);
+            elseif strcmp(type, 'sin') 
+                ampl = (max_value - min_value) / 2;
+                offset = min_value + ampl;
+                period(1:n_samples_per_period+1) = offset + ampl * sin(linspace(0, 2*pi, n_samples_per_period+1));
+            elseif strcmp(type, 'rand') 
+                ampl = (max_value - min_value);
+                period(1:n_samples_per_period) = ampl * rand(n_samples_per_period,1);
+            end
+            phase_offset = floor(phase * n_samples_per_period);
+            phase_offset = mod(phase_offset, n_samples_per_period);
+            period = [ period(phase_offset+1:n_samples_per_period); period(1:phase_offset)];
+            for i = 1 : n_samples
+               X(i) = period( 1 + mod((i-1), n_samples_per_period) ); 
+            end
+
+        end
+
+
+        
         function [bursts] = FindBursts(af)
             
             % Crude large-signal peak detection
@@ -39,15 +117,6 @@ classdef f
             f = transpose(f);
             f = sum(f);            
             fcn = f;
-        end
-        
-        function [T] = to_time_domain(D, sample_rate, pts_per_sample, full_scale_digital, full_scale_analog)
-            nsamples = size(D, 1)
-            T = zeros(nsamples, 2);
-            for i = 1 : nsamples*pts_per_sample
-                T(i,1) = i/(sample_rate*pts_per_sample);
-                T(i,2) = full_scale_analog*D(ceil(i/pts_per_sample))/full_scale_digital;
-            end
         end
         
         function [t] = fromFFT(mag)

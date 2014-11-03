@@ -345,12 +345,7 @@ gfx.figDiscreteAndTD('Input Stream', X, X_t, ...
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-%[IS, QS] = fpga.map_IQ(X, bits_per_source_sample, bits_per_iq_sample, n_channels); 
-
-[IS, QS] = fpga.map_IQ_8bit_256qam(X); 
-
-
-
+[IS, QS] = fpga.map_IQ(X, bits_per_source_sample, bits_per_iq_sample, n_channels); 
 
 IS_t = util.to_time_domain(IS, iq_sample_rate, td_resolution, ...
     iq_sample_span, iq_sample_span);
@@ -460,9 +455,9 @@ td_resolution, [-1,1], [-1,1]);
 Q_t = util.to_time_domain(Q, dac_sample_rate, ...
 td_resolution, [-1,1], [-1,1]);
 
-gfx.figDiscreteAndTD('Baseband I', I, I_t, bits_per_iqlc_sample / iqlc_samples_per_baseband_cycle, ...
+gfx.figDiscreteAndTD('Baseband I', I, I_t, bits_per_iqlc_sample / (baseband_sample_rate * iqlc_samples_per_baseband_cycle), ...
     baseband_sample_rate, [-1,1], [-1,1], I_plot_color);
-gfx.figDiscreteAndTD('Baseband Q', Q, Q_t, bits_per_iqlc_sample / iqlc_samples_per_baseband_cycle, ...
+gfx.figDiscreteAndTD('Baseband Q', Q, Q_t, bits_per_iqlc_sample / (baseband_sample_rate * iqlc_samples_per_baseband_cycle), ...
     baseband_sample_rate, [-1,1], [-1,1], Q_plot_color);
 
 
