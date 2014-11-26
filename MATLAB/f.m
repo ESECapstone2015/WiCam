@@ -131,19 +131,20 @@ classdef f
             nsamples = numel(fcn)-1;
             nPts = 2^nextpow2(nsamples);
             frq = (smprate/2)*linspace(0,1,nPts/2+1);
-            frq = frq.';
+            %frq = frq.';
             Y = fft(fcn,nPts)/nsamples;
-            Y = Y(1:nPts/2+1);  
+            Y = Y(1:nPts/2+1) + 1e-20;  
+            Y = 10*log10(Y);
         end
         
         function [frq, mag] = toFFT(fcn, smprate)
-            nsamples = numel(fcn)-1;
+            nsamples = numel(fcn)-1
             nPts = 2^nextpow2(nsamples);
             frq = (smprate/2)*linspace(0,1,nPts/2+1);
             frq = frq.';
-            mag = fft(fcn,nPts)/nsamples;
+            mg = fft(fcn,nPts)/nsamples;
             %mag = 2*abs(mag(1:nPts/2+1));  
-            mag = mag(1:nPts/2+1);  
+            mag = mg(1:nPts/2+1);  
             mag = 10*log(mag);
         end
         
@@ -155,8 +156,8 @@ classdef f
             ylabel('Magnitude');
         end
         
-        function [] = plotFFT2(frq, mag, smprate, name)
-            plot(frq.',mag);
+        function [] = plotFFT2(frq, mag, name)
+            plot(frq.',-mag);
             title(['FFT: ', name]);
             xlabel('Frequency');
             ylabel('Magnitude');

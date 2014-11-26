@@ -14,15 +14,10 @@
 %   Definitions
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% 
-%   application     the HW and SW that uses this transmission system
 %
 %   baseband        a low-frequency modulated carrier. A baseband carrier 
 %                       of frequency f can be modulated by up to +/- f, 
 %                       giving a channel bandwidth of 2f.
-%
-%   data stream     a sequence of samples at the application level
-%                       (e.g. video feed)
 %
 %   I/Q             In-phase / Quadrature carriers. Q is phase-offset from 
 %                       I by 90 degrees. Because they are orthogonal, each
@@ -37,13 +32,6 @@
 %                       I/Q samples. An N-bit stream sample will map to K 
 %                       M-bit I/Q sample pairs, where 2^M is the number of 
 %                       possible amplitude levels of that I/Q component
-%
-%   sample          a data point representing the value of some signal at 
-%                       one point in time
-%
-%   sequence        an array of discrete samples
-%
-%   source          the origin of application data (e.g. camera)
 %
 %   symbol          a sample that modulates a carrier. An N-bit symbol 
 %                       corresponds to 2^N levels of modulation
@@ -126,7 +114,7 @@ pi = 3.1416;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Duration of one time-domain instant
-td_resolution = 5e-9;  
+td_resolution = 1e-9;  
 
 % Colours for plotting
 black = [0.0 0.0 0.0];
@@ -301,10 +289,10 @@ dac_sample_rate = 80e6;  % 80 Msps
 
 % Generate and combine a variety of signals
 X = [];
-X = [X; f.SigGen('rect', 32, source_sample_span, 16, 0, 0.5)];    
-X = [X; f.SigGen('tri',  64, source_sample_span, 1.5, 0, 0.5)];
-X = [X; f.SigGen('sin',  64, source_sample_span, 1.5, -0.25)];
-X = [X; f.SigGen('rand', 96, source_sample_span)];
+%X = [X; f.SigGen('rect', 32, source_sample_span, 16, 0, 0.5)];    
+%X = [X; f.SigGen('tri',  64, source_sample_span, 1.5, 0, 0.5)];
+X = [X; f.SigGen('sin',  256, source_sample_span, 16, 0)];
+%X = [X; f.SigGen('rand', 196, source_sample_span)];
 
 % Clip to span bounds and round to discrete integers
 X = min(X, source_sample_span(2));
@@ -337,7 +325,40 @@ gfx.figDiscreteAndTD('Input Stream', X, X_t, ...
     source_sample_span, source_sample_span, source_plot_color);
 
 
+[freq,X_FFT] = f.FFT2(X, source_sample_rate);
 
+%figure(89)
+%f.plotFFT(X, source_sample_rate,'');
+
+figure(90)
+title = 'Input FFT'; 
+set(gcf,'numbertitle','off','name',title);
+subplot(2, 1, 1);
+f.plotFFT2(freq, abs(X_FFT), 'Magnitude');
+subplot(2, 1, 2);
+f.plotFFT2(freq, angle(X_FFT), 'Phase');
+
+
+figure(91)
+Fs = 1/td_resolution;
+L = size(X_t,1);
+NFFT = 2^nextpow2(L); % Next power of 2 from length of y
+Y = fft(X_t,NFFT)/L;
+f = Fs/2*linspace(0,1,NFFT/2+1);
+
+% Plot single-sided amplitude spectrum.
+
+ft = 2*abs(Y(1:NFFT/2+1));
+ftdb = 10*log10(ft+1e-10)
+
+plot(f,ftdb);
+%title('Single-Sided Amplitude Spectrum of y(t)')
+xlabel('Frequency (Hz)')
+ylabel('|Y(f)|')
+
+
+
+%break;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -372,6 +393,22 @@ gfx.figDiscreteAndTD('I Samples', IS, IS_t, bits_per_iq_sample, ...
 gfx.figDiscreteAndTD('Q Samples', QS, QS_t, bits_per_iq_sample, ...
     iq_sample_rate, iq_sample_span, iq_sample_span, Q_plot_color);
 
+C = [IS'; QS'];
+
+
+
+figure(99);
+n = size(IS,1);
+noise = 0.15;
+%ISN = IS + noise*(rand(n,1)-0.5);
+%QSN = QS + noise*(rand(n,1)-0.5);
+
+%IS = IS + noise*(normrnd(0,1,n,1));
+%QS = QS + noise*(normrnd(0,1,n,1));
+
+
+scatter(IS, QS);
+axis([-1,16,-1,16]);
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -439,7 +476,7 @@ n_baseband_samples = numel(ILC) * baseband_samples_per_iqlc_sample;
 n_baseband_cycles = n_baseband_samples / baseband_samples_per_cycle;
 
 IC = f.SigGen('sin',n_baseband_samples,[-1,1],n_baseband_cycles,0,0.5);
-QC = f.SigGen('rect',n_baseband_samples,[-1,1],n_baseband_cycles,0.25,0.5);
+QC = f.SigGen('sin',n_baseband_samples,[-1,1],n_baseband_cycles,0.25,0.5);
 
 
 IC_t = util.to_time_domain(IC, baseband_sample_rate, ...
@@ -483,31 +520,46 @@ gfx.figDiscreteAndTD('Baseband Q', Q, Q_t, bits_per_iqlc_sample / iqlc_samples_p
 
 
 
+[freq,I_FFT] = f.FFT2(I, dac_sample_rate);
+
+figure(96)
+title = 'Baseband I FFT'; 
+set(gcf,'numbertitle','off','name',title);
+subplot(2, 1, 1);
+f.plotFFT2(freq, abs(I_FFT), 'Magnitude');
+subplot(2, 1, 2);
+f.plotFFT2(freq, angle(I_FFT), 'Phase');
+
+
+[freq,Q_FFT] = f.FFT2(Q, dac_sample_rate);
+
+figure(97)
+title = 'Baseband Q FFT'; 
+set(gcf,'numbertitle','off','name',title);
+subplot(2, 1, 1);
+f.plotFFT2(freq, abs(Q_FFT), 'Magnitude');
+subplot(2, 1, 2);
+f.plotFFT2(freq, angle(Q_FFT), 'Phase');
 
 
 
-% 
-% [freq,ILC_FFT] = f.FFT2(ILC, symbols_per_cycle*iq_sample_rate);
-% 
-% figure(7)
-% title = 'I Line-Coded FFT'; 
-% set(gcf,'numbertitle','off','name',title);
-% subplot(2, 1, 1);
-% f.plotFFT(real(ILC_FFT), symbols_per_cycle*iq_sample_rate, 'Magnitude');
-% subplot(2, 1, 2);
-% f.plotFFT(imag(ILC_FFT), symbols_per_cycle*iq_sample_rate, 'Phase');
-% 
-% 
-% [freq,QLC_FFT] = f.FFT2(QLC, symbols_per_cycle*iq_sample_rate);
-% 
-% figure(8)
-% title = 'Q Line-Coded FFT'; 
-% set(gcf,'numbertitle','off','name',title);
-% subplot(2, 1, 1);
-% f.plotFFT(real(QLC_FFT), symbols_per_cycle*iq_sample_rate, 'Magnitude');
-% subplot(2, 1, 2);
-% f.plotFFT(imag(QLC_FFT), symbols_per_cycle*iq_sample_rate, 'Phase');
-% 
+IQ = I + Q;
+
+IQ_t = util.to_time_domain(IQ, dac_sample_rate, ...
+td_resolution, [-1,1], [-1,1]);
+gfx.figDiscreteAndTD('Baseband IQ', IQ, IQ_t, 2 * bits_per_iqlc_sample / iqlc_samples_per_baseband_cycle, ...
+    baseband_sample_rate, [-1,1], [-1,1], black);
+
+[freq,IQ_FFT] = f.FFT2(IQ, dac_sample_rate);
+
+figure(98)
+title = 'Baseband IQ FFT'; 
+set(gcf,'numbertitle','off','name',title);
+subplot(2, 1, 1);
+f.plotFFT2(freq, abs(IQ_FFT), 'Magnitude');
+subplot(2, 1, 2);
+f.plotFFT2(freq, angle(IQ_FFT), 'Phase');
+
 
 
 %ILC_t(:,2) = cm_IQ + ILC_t(:,2);
